@@ -1,0 +1,22 @@
+{
+  "name": "@logward/root",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LogWard - Self-hosted log management platform",
+  "author": "LogWard Team",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter \"./packages/**\" dev",
+    "dev:backend": "pnpm --filter \"@logward/backend\" dev",
+    "dev:frontend": "pnpm --filter \"@logward/frontend\" dev",
+    "build": "pnpm --recursive --filter \"./packages/**\" build",
+    "build:shared": "pnpm --filter \"@logward/shared\" build",
+    "test": "pnpm --recursive --filter \"./packages/**\" test",
+    "typecheck": "pnpm --recursive --filter \"./packages/**\" typecheck",
+    "clean": "pnpm --recursive --filter \"./packages/**\" clean"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

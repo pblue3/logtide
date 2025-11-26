@@ -1,0 +1,65 @@
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { z } from 'zod';
+
+// Load .env from project root
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(__dirname, '../../../../.env');
+dotenv.config({ path: envPath, debug: false });
+
+const configSchema = z.object({
+  // Server
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.string().default('8080').transform(Number),
+  HOST: z.string().default('0.0.0.0'),
+
+  // Database
+  DATABASE_URL: z.string().url(),
+
+  // Redis
+  REDIS_URL: z.string().url().default('redis://localhost:6379'),
+
+  // API
+  API_KEY_SECRET: z.string().min(32),
+
+  // SMTP
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().default('587').transform(Number),
+  SMTP_SECURE: z.string().default('false').transform((val) => val === 'true'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().email().default('noreply@logward.local'),
+
+  // Rate limiting
+  RATE_LIMIT_MAX: z.string().default('1000').transform(Number),
+  RATE_LIMIT_WINDOW: z.string().default('60000').transform(Number), // 1 minute in ms
+});
+
+export type Config = z.infer<typeof configSchema>;
+
+function loadConfig(): Config {
+  const result = configSchema.safeParse(process.env);
+
+  if (!result.success) {
+    console.error('❌ Invalid configuration:');
+    console.error(result.error.format());
+    throw new Error('Invalid configuration');
+  }
+
+  return result.data;
+}
+
+export const config = loadConfig();
+
+export function isDevelopment(): boolean {
+  return config.NODE_ENV === 'development';
+}
+
+export function isProduction(): boolean {
+  return config.NODE_ENV === 'production';
+}
+
+export function isTest(): boolean {
+  return config.NODE_ENV === 'test';
+}

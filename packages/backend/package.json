@@ -1,0 +1,58 @@
+{
+  "name": "@logward/backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LogWard Backend API",
+  "type": "module",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
+    "migrate": "tsx src/scripts/migrate.ts",
+    "migrate:down": "tsx src/scripts/migrate.ts down",
+    "migrate:cleanup": "tsx src/scripts/cleanup-old-migrations.ts",
+    "check-schema": "tsx src/scripts/check-schema.ts",
+    "enable-system-login": "tsx src/scripts/enable-system-login.ts",
+    "add-system-to-org": "tsx src/scripts/add-system-to-org.ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@fastify/cors": "^9.0.1",
+    "@fastify/env": "^4.4.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/websocket": "^10.0.1",
+    "@logward-dev/sdk-node": "^0.1.0",
+    "@logward/shared": "workspace:*",
+    "bcrypt": "^6.0.0",
+    "bullmq": "^5.12.15",
+    "dotenv": "^17.2.3",
+    "fastify": "^4.28.1",
+    "fastify-plugin": "^4.5.1",
+    "ioredis": "^5.4.1",
+    "js-yaml": "^4.1.1",
+    "kysely": "^0.27.4",
+    "nodemailer": "^6.9.14",
+    "pg": "^8.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.14.15",
+    "@types/nodemailer": "^6.4.15",
+    "@types/pg": "^8.11.6",
+    "tsx": "^4.16.5",
+    "typescript": "^5.5.4",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

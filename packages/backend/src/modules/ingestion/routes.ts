@@ -1,0 +1,213 @@
+import type { FastifyPluginAsync } from 'fastify';
+import { ingestRequestSchema, logSchema } from '@logward/shared';
+import { ingestionService } from './service.js';
+
+const ingestionRoutes: FastifyPluginAsync = async (fastify) => {
+  // Add parser for Fluent Bit's NDJSON format
+  fastify.addContentTypeParser('application/x-ndjson', { parseAs: 'string' }, (_req, body, done) => {
+    try {
+      // NDJSON sends newline-separated JSON objects
+      // Parse the first line (single log per request with json_lines)
+      const firstLine = body.toString().trim().split('\n')[0];
+      const json = JSON.parse(firstLine);
+      done(null, json);
+    } catch (err: any) {
+      done(err, undefined);
+    }
+  });
+
+  // POST /api/v1/ingest/single - Ingest single log (for Fluent Bit)
+  fastify.post('/api/v1/ingest/single', {
+    config: {
+      rateLimit: {
+        max: 300, // 300 requests per minute per API key
+        timeWindow: '1 minute'
+      }
+    },
+    schema: {
+      description: 'Ingest a single log entry (optimized for Fluent Bit)',
+      tags: ['ingestion'],
+      body: {
+        type: 'object',
+        properties: {
+          time: { type: 'string' },
+          date: { type: 'number' },
+          service: { type: 'string' },
+          container_name: { type: 'string' },
+          level: { type: 'string' },
+          message: { type: 'string' },
+          log: { type: 'string' },
+          metadata: { type: 'object' },
+          trace_id: { type: 'string' },
+        },
+        additionalProperties: true,
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            received: { type: 'number' },
+            timestamp: { type: 'string' },
+          },
+        },
+      },
+    },
+    handler: async (request: any, reply) => {
+      // Get projectId from authenticated request (set by auth plugin)
+      const projectId = request.projectId;
+
+      if (!projectId) {
+        return reply.code(401).send({
+          error: 'Project context missing',
+        });
+      }
+
+      const logData = request.body;
+
+      // Convert numeric log levels (Pino/Bunyan format) to string
+      const normalizeLevel = (level: any): string => {
+        if (typeof level === 'number' || !isNaN(Number(level))) {
+          const numLevel = Number(level);
+          if (numLevel >= 60) return 'critical';
+          if (numLevel >= 50) return 'error';
+          if (numLevel >= 40) return 'warn';
+          if (numLevel >= 30) return 'info';
+          return 'debug';
+        }
+        return level || 'info';
+      };
+
+      // Normalize fields from Fluent Bit format to LogWard format
+      const log = {
+        time: logData.time || (logData.date ? new Date(logData.date * 1000).toISOString() : new Date().toISOString()),
+        service: logData.service || logData.container_name || 'unknown',
+        level: normalizeLevel(logData.level),
+        message: logData.message || logData.log || '',
+        metadata: {
+          ...logData.metadata,
+          container_id: logData.container_id,
+          container_short_id: logData.container_short_id,
+        },
+      };
+
+      // Validate normalized log
+      const parseResult = logSchema.safeParse(log);
+
+      if (!parseResult.success) {
+        return reply.code(400).send({
+          error: 'Validation error',
+          details: parseResult.error.format(),
+        });
+      }
+
+      // Wrap single log in array and ingest
+      const received = await ingestionService.ingestLogs([parseResult.data], projectId);
+
+      return {
+        received,
+        timestamp: new Date().toISOString(),
+      };
+    },
+  });
+
+  // POST /api/v1/ingest - Ingest logs
+  fastify.post('/api/v1/ingest', {
+    config: {
+      rateLimit: {
+        max: 200, // 200 batch requests per minute per API key
+        timeWindow: '1 minute'
+      }
+    },
+    schema: {
+      description: 'Ingest logs in batch',
+      tags: ['ingestion'],
+      body: {
+        type: 'object',
+        properties: {
+          logs: {
+            type: 'array',
+            items: {
+              type: 'object',
+            },
+          },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            received: { type: 'number' },
+            timestamp: { type: 'string' },
+          },
+        },
+      },
+    },
+    handler: async (request: any, reply) => {
+      // Validate request body
+      const parseResult = ingestRequestSchema.safeParse(request.body);
+
+      if (!parseResult.success) {
+        return reply.code(400).send({
+          error: 'Validation error',
+          details: parseResult.error.format(),
+        });
+      }
+
+      const { logs } = parseResult.data;
+
+      // Get projectId from authenticated request (set by auth plugin)
+      const projectId = request.projectId;
+
+      if (!projectId) {
+        return reply.code(401).send({
+          error: 'Project context missing',
+        });
+      }
+
+      // Ingest logs
+      const received = await ingestionService.ingestLogs(logs, projectId);
+
+      return {
+        received,
+        timestamp: new Date().toISOString(),
+      };
+    },
+  });
+
+  // GET /api/v1/stats - Get log statistics
+  fastify.get('/api/v1/stats', {
+    schema: {
+      description: 'Get log statistics',
+      tags: ['ingestion'],
+      querystring: {
+        type: 'object',
+        properties: {
+          from: { type: 'string', format: 'date-time' },
+          to: { type: 'string', format: 'date-time' },
+        },
+      },
+    },
+    handler: async (request: any, reply) => {
+      const { from, to } = request.query as { from?: string; to?: string };
+
+      // Get projectId from authenticated request (set by auth plugin)
+      const projectId = request.projectId;
+
+      if (!projectId) {
+        return reply.code(401).send({
+          error: 'Project context missing',
+        });
+      }
+
+      const stats = await ingestionService.getStats(
+        projectId,
+        from ? new Date(from) : undefined,
+        to ? new Date(to) : undefined
+      );
+
+      return stats;
+    },
+  });
+};
+
+export default ingestionRoutes;

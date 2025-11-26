@@ -1,0 +1,151 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: logward-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: logward-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+  backend:
+    build:
+      context: ..
+      dockerfile: packages/backend/Dockerfile
+    container_name: logward-backend
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      DATABASE_HOST: postgres
+      DB_USER: ${DB_USER}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      API_KEY_SECRET: ${API_KEY_SECRET}
+      PORT: 8080
+      HOST: 0.0.0.0
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@logward.local}
+      INTERNAL_LOGGING_ENABLED: ${INTERNAL_LOGGING_ENABLED:-false}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-}
+      SERVICE_NAME: logward-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+  worker:
+    build:
+      context: ..
+      dockerfile: packages/backend/Dockerfile
+    container_name: logward-worker
+    command: ["worker"]
+    healthcheck:
+      disable: true
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      DATABASE_HOST: postgres
+      DB_USER: ${DB_USER}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      API_KEY_SECRET: ${API_KEY_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@logward.local}
+      INTERNAL_LOGGING_ENABLED: ${INTERNAL_LOGGING_ENABLED:-false}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-}
+      SERVICE_NAME: logward-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: packages/frontend/Dockerfile
+      args:
+        PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    container_name: logward-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    container_name: logward-fluent-bit
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - ./parsers.conf:/fluent-bit/etc/parsers.conf:ro
+      - ./extract_container_id.lua:/fluent-bit/etc/extract_container_id.lua:ro
+      - ./wrap_logs.lua:/fluent-bit/etc/wrap_logs.lua:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LOGWARD_API_KEY: ${FLUENT_BIT_API_KEY:-}
+      LOGWARD_API_HOST: backend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - logward-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  logward-network:
+    driver: bridge

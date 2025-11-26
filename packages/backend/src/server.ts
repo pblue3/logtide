@@ -1,0 +1,139 @@
+import Fastify from 'fastify';
+import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
+import { config } from './config/index.js';
+import authPlugin from './modules/auth/plugin.js';
+import { ingestionRoutes } from './modules/ingestion/index.js';
+import { queryRoutes } from './modules/query/index.js';
+import { alertsRoutes } from './modules/alerts/index.js';
+import { usersRoutes } from './modules/users/routes.js';
+import { projectsRoutes } from './modules/projects/routes.js';
+import { organizationsRoutes } from './modules/organizations/routes.js';
+import { notificationsRoutes } from './modules/notifications/routes.js';
+import { apiKeysRoutes } from './modules/api-keys/routes.js';
+import dashboardRoutes from './modules/dashboard/routes.js';
+import { sigmaRoutes } from './modules/sigma/routes.js';
+import { adminRoutes } from './modules/admin/index.js';
+import internalLoggingPlugin from './plugins/internal-logging-plugin.js';
+import { initializeInternalLogging, shutdownInternalLogging } from './utils/internal-logger.js';
+import websocketPlugin from './plugins/websocket.js';
+import websocketRoutes from './modules/query/websocket.js';
+
+const PORT = config.PORT;
+const HOST = config.HOST;
+
+export async function build(opts = {}) {
+  const fastify = Fastify({
+    logger: true,
+    ...opts,
+  });
+
+  // CORS configuration
+  // Allow all origins to support browser-based SDK usage
+  // Security is provided by API key authentication for ingestion routes
+  // and session authentication for dashboard/UI routes
+  await fastify.register(cors, {
+    origin: true, // Allow all origins (API key + session auth provide security)
+    credentials: true, // Allow cookies/credentials for SSE
+  });
+
+  // Security headers
+  await fastify.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      }
+    },
+    crossOriginEmbedderPolicy: false, // Allow embedding for SSE
+  });
+
+  await fastify.register(rateLimit, {
+    max: config.RATE_LIMIT_MAX,
+    timeWindow: config.RATE_LIMIT_WINDOW,
+  });
+
+  // Internal logging plugin (logs all requests except ingestion endpoints)
+  await fastify.register(internalLoggingPlugin);
+
+  // Health check (no auth required)
+  fastify.get('/health', async () => {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: '0.1.0',
+    };
+  });
+
+  // User authentication routes (no API key required)
+  await fastify.register(usersRoutes, { prefix: '/api/v1/auth' });
+
+  // Organizations routes (session-based auth)
+  await fastify.register(organizationsRoutes, { prefix: '/api/v1/organizations' });
+
+  // Projects routes (session-based auth)
+  await fastify.register(projectsRoutes, { prefix: '/api/v1/projects' });
+
+  // Notifications routes (session-based auth)
+  await fastify.register(notificationsRoutes, { prefix: '/api/v1/notifications' });
+
+  // Alerts routes (session-based auth)
+  await fastify.register(alertsRoutes, { prefix: '/api/v1/alerts' });
+
+  // Sigma rules routes (session-based auth)
+  await fastify.register(sigmaRoutes);
+
+  // API keys management routes (session-based auth)
+  await fastify.register(apiKeysRoutes, { prefix: '/api/v1/projects' });
+
+  // Dashboard routes (session-based auth)
+  await fastify.register(dashboardRoutes);
+
+  // Admin routes (session-based auth + admin middleware)
+  await fastify.register(adminRoutes, { prefix: '/api/v1/admin' });
+
+  // Register API key auth plugin (applies to log ingestion/query routes below)
+  await fastify.register(authPlugin);
+
+  // Register log management routes (require API key)
+  await fastify.register(ingestionRoutes);
+  await fastify.register(queryRoutes);
+
+  // Register WebSocket support
+  await fastify.register(websocketPlugin);
+  await fastify.register(websocketRoutes);
+
+  return fastify;
+}
+
+async function start() {
+
+  // Initialize internal logging first
+  await initializeInternalLogging();
+
+  const app = await build();
+
+  // Graceful shutdown handlers
+  const shutdown = async () => {
+    await shutdownInternalLogging();
+    await app.close();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', () => shutdown());
+  process.on('SIGTERM', () => shutdown());
+
+  try {
+    await app.listen({ port: PORT, host: HOST });
+  } catch (err) {
+    (app.log as any).error(err as Error);
+    await shutdownInternalLogging();
+    process.exit(1);
+  }
+}
+
+// Start the server directly when this file is run
+start();

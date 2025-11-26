@@ -1,0 +1,47 @@
+{
+  "name": "@logward/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LogWard Frontend Dashboard",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test",
+    "typecheck": "svelte-kit sync && tsc --noEmit",
+    "clean": "rm -rf .svelte-kit build"
+  },
+  "dependencies": {
+    "@logward/shared": "workspace:*",
+    "@tanstack/svelte-table": "^8.21.3",
+    "echarts": "^6.0.0",
+    "lucide-svelte": "^0.553.0",
+    "shiki": "^3.15.0"
+  },
+  "devDependencies": {
+    "@lucide/svelte": "^0.482.0",
+    "@playwright/test": "^1.45.3",
+    "@prgm/sveltekit-progress-bar": "^3.0.2",
+    "@sveltejs/adapter-node": "^5.4.0",
+    "@sveltejs/kit": "^2.48.5",
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "autoprefixer": "^10.4.19",
+    "bits-ui": "^1.8.0",
+    "clsx": "^2.1.1",
+    "csstype": "^3.2.3",
+    "mode-watcher": "^1.1.0",
+    "postcss": "^8.4.40",
+    "shadcn-svelte": "^1.0.11",
+    "svelte": "^5.43.6",
+    "svelte-sonner": "^0.3.28",
+    "tailwind-merge": "^3.4.0",
+    "tailwind-variants": "^0.2.1",
+    "tailwindcss": "^3.4.7",
+    "typescript": "^5.5.4",
+    "vite": "^6.4.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
