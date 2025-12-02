@@ -1,6 +1,6 @@
 {
   "name": "@logward/shared",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Shared types, schemas and utilities for LogWard",
   "type": "module",
@@ -19,10 +19,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "zod": "^3.23.8"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=20.0.0"
