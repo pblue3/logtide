@@ -7,6 +7,7 @@ import {
 	type IncidentFilters,
 	type Severity,
 } from '$lib/api/siem';
+import { getApiUrl } from '$lib/config';
 
 // ============================================================================
 // TYPES
@@ -201,7 +202,7 @@ function createSiemStore() {
 			}
 
 			const eventSource = new EventSource(
-				`/api/v1/siem/events?${params.toString()}&token=${token}`
+				`${getApiUrl()}/api/v1/siem/events?${params.toString()}&token=${token}`
 			);
 
 			eventSource.onmessage = (event) => {

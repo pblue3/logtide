@@ -1,6 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
-
-const API_URL = PUBLIC_API_URL;
+import { getApiUrl } from '$lib/config';
 
 // ============================================================================
 // TYPES
@@ -224,7 +222,7 @@ export async function getDashboardStats(params: {
         params.severity.forEach(s => searchParams.append('severity', s));
     }
 
-    const response = await fetch(`${API_URL}/api/v1/siem/dashboard?${searchParams}`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/dashboard?${searchParams}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -244,7 +242,7 @@ export async function getDashboardStats(params: {
 export async function createIncident(params: CreateIncidentParams): Promise<Incident> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/incidents`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/incidents`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -302,7 +300,7 @@ export async function listIncidents(filters: IncidentFilters): Promise<{ inciden
         searchParams.append('offset', filters.offset.toString());
     }
 
-    const response = await fetch(`${API_URL}/api/v1/siem/incidents?${searchParams}`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/incidents?${searchParams}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -332,7 +330,7 @@ export async function getIncident(
     const searchParams = new URLSearchParams({ organizationId });
 
     const response = await fetch(
-        `${API_URL}/api/v1/siem/incidents/${incidentId}?${searchParams}`,
+        `${getApiUrl()}/api/v1/siem/incidents/${incidentId}?${searchParams}`,
         {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -357,7 +355,7 @@ export async function updateIncident(
 ): Promise<Incident> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/incidents/${incidentId}`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/incidents/${incidentId}`, {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -382,7 +380,7 @@ export async function deleteIncident(incidentId: string, organizationId: string)
     const searchParams = new URLSearchParams({ organizationId });
 
     const response = await fetch(
-        `${API_URL}/api/v1/siem/incidents/${incidentId}?${searchParams}`,
+        `${getApiUrl()}/api/v1/siem/incidents/${incidentId}?${searchParams}`,
         {
             method: 'DELETE',
             headers: {
@@ -407,7 +405,7 @@ export async function addIncidentComment(
 ): Promise<IncidentComment> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/incidents/${incidentId}/comments`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/incidents/${incidentId}/comments`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -430,7 +428,7 @@ export async function addIncidentComment(
 export async function checkIpReputation(ip: string): Promise<IpReputationData> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/enrichment/ip-reputation`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/enrichment/ip-reputation`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -453,7 +451,7 @@ export async function checkIpReputation(ip: string): Promise<IpReputationData> {
 export async function getGeoIpData(ip: string): Promise<GeoIpData> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/enrichment/geoip`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/enrichment/geoip`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -479,7 +477,7 @@ export async function getEnrichmentStatus(): Promise<{
 }> {
     const token = getToken();
 
-    const response = await fetch(`${API_URL}/api/v1/siem/enrichment/status`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/enrichment/status`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
@@ -517,7 +515,7 @@ export async function getRecentDetections(params: {
         searchParams.append('offset', params.offset.toString());
     }
 
-    const response = await fetch(`${API_URL}/api/v1/siem/detections?${searchParams}`, {
+    const response = await fetch(`${getApiUrl()}/api/v1/siem/detections?${searchParams}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
