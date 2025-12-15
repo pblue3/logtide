@@ -7,7 +7,7 @@
         CardHeader,
         CardTitle,
     } from "$lib/components/ui/card";
-    import { AlertCircle, CheckCircle2, Package, Server, Scale, Layers } from "lucide-svelte";
+    import { AlertCircle, CheckCircle2, Package, Server, Scale, Layers, Cloud } from "lucide-svelte";
 </script>
 
 <div class="docs-content">
@@ -42,7 +42,7 @@
         </Card>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Quick Start (2 Minutes)</h3>
+            <h3 id="quick-start" class="text-lg font-semibold mb-3 scroll-mt-20">Quick Start (2 Minutes)</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Create project directory
@@ -62,7 +62,7 @@ docker compose up -d`}
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Required Environment Variables</h3>
+            <h3 id="environment-variables" class="text-lg font-semibold mb-3 scroll-mt-20">Required Environment Variables</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border border-border rounded-lg">
                     <thead class="bg-muted">
@@ -97,7 +97,31 @@ docker compose up -d`}
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Available Docker Images</h3>
+            <h3 id="fluent-bit" class="text-lg font-semibold mb-3 scroll-mt-20">(Optional) Docker Log Collection with Fluent Bit</h3>
+            <p class="text-sm text-muted-foreground mb-3">
+                To automatically collect logs from all Docker containers using Fluent Bit:
+            </p>
+            <CodeBlock
+                lang="bash"
+                code={`# Download Fluent Bit configuration files
+curl -O https://raw.githubusercontent.com/logward-dev/logward/main/docker/fluent-bit.conf
+curl -O https://raw.githubusercontent.com/logward-dev/logward/main/docker/parsers.conf
+curl -O https://raw.githubusercontent.com/logward-dev/logward/main/docker/extract_container_id.lua
+curl -O https://raw.githubusercontent.com/logward-dev/logward/main/docker/wrap_logs.lua
+
+# Add your LogWard API key to .env
+echo "FLUENT_BIT_API_KEY=your_api_key_here" >> .env
+
+# Start with logging profile enabled
+docker compose --profile logging up -d`}
+            />
+            <p class="text-sm text-muted-foreground mt-3">
+                This profile is optional. Without it, LogWard runs without the Fluent Bit container.
+            </p>
+        </div>
+
+        <div>
+            <h3 id="docker-images" class="text-lg font-semibold mb-3 scroll-mt-20">Available Docker Images</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border border-border rounded-lg">
                     <thead class="bg-muted">
@@ -150,8 +174,8 @@ docker compose up -d`}
                 <CodeBlock
                     lang="bash"
                     code={`# In your .env file
-LOGWARD_BACKEND_IMAGE=logward/backend:0.3.0
-LOGWARD_FRONTEND_IMAGE=logward/frontend:0.3.0`}
+LOGWARD_BACKEND_IMAGE=logward/backend:0.3.1
+LOGWARD_FRONTEND_IMAGE=logward/frontend:0.3.1`}
                 />
             </CardContent>
         </Card>
@@ -205,7 +229,7 @@ LOGWARD_FRONTEND_IMAGE=logward/frontend:0.3.0`}
         </Card>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Configure for Remote Access</h3>
+            <h3 id="remote-access" class="text-lg font-semibold mb-3 scroll-mt-20">Configure for Remote Access</h3>
             <p class="text-sm text-muted-foreground mb-3">
                 In your <code>.env</code> file, set the public URL where the backend API is accessible:
             </p>
@@ -222,7 +246,7 @@ PUBLIC_API_URL=https://api.yourdomain.com`}
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Example: VPS Deployment</h3>
+            <h3 id="vps-deployment" class="text-lg font-semibold mb-3 scroll-mt-20">Example: VPS Deployment</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Server IP: 192.168.1.100
@@ -240,7 +264,7 @@ PUBLIC_API_URL=http://192.168.1.100:8080
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">With Reverse Proxy (nginx/Traefik)</h3>
+            <h3 id="reverse-proxy" class="text-lg font-semibold mb-3 scroll-mt-20">With Reverse Proxy (nginx/Traefik)</h3>
             <p class="text-sm text-muted-foreground mb-3">
                 If you're using a reverse proxy in front of LogWard, configure accordingly:
             </p>
@@ -324,7 +348,7 @@ PUBLIC_API_URL=https://api.example.com`}
         </Card>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Enable Horizontal Scaling</h3>
+            <h3 id="enable-scaling" class="text-lg font-semibold mb-3 scroll-mt-20">Enable Horizontal Scaling</h3>
             <p class="text-sm text-muted-foreground mb-3">
                 The default <code>docker-compose.yml</code> runs a single instance of each service.
                 For horizontal scaling, download and use the Traefik overlay:
@@ -369,7 +393,7 @@ docker compose ps`}
         </Card>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Architecture</h3>
+            <h3 id="architecture" class="text-lg font-semibold mb-3 scroll-mt-20">Architecture</h3>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm border border-border rounded-lg">
                     <thead class="bg-muted">
@@ -443,6 +467,197 @@ docker compose ps`}
     </div>
 
     <h2
+        id="kubernetes"
+        class="text-2xl font-semibold mb-4 scroll-mt-20 border-b border-border pb-2"
+    >
+        Kubernetes (Helm)
+    </h2>
+
+    <div class="mb-12 space-y-6">
+        <Card>
+            <CardHeader>
+                <div class="flex items-start gap-3">
+                    <Cloud class="w-5 h-5 text-primary mt-0.5" />
+                    <div>
+                        <CardTitle class="text-base">Production-Ready Kubernetes Deployment</CardTitle>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent class="text-sm text-muted-foreground">
+                Deploy LogWard on any Kubernetes cluster using our official Helm chart.
+                Includes auto-scaling, health probes, Ingress support, and Prometheus monitoring.
+            </CardContent>
+        </Card>
+
+        <div>
+            <h3 id="helm-quick-install" class="text-lg font-semibold mb-3 scroll-mt-20">Quick Install</h3>
+            <CodeBlock
+                lang="bash"
+                code={`# Add the LogWard Helm repository
+helm repo add logward https://logward-dev.github.io/logward-helm-chart
+helm repo update
+
+# Install LogWard
+helm install logward logward/logward \\
+  --namespace logward \\
+  --create-namespace \\
+  --set timescaledb.auth.password=<your-db-password> \\
+  --set redis.auth.password=<your-redis-password>`}
+            />
+        </div>
+
+        <div>
+            <h3 id="helm-whats-included" class="text-lg font-semibold mb-3 scroll-mt-20">What's Included</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                    <CardContent class="pt-4">
+                        <ul class="text-sm space-y-2">
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Backend API (2+ replicas)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Frontend (2+ replicas)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Worker (BullMQ jobs)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>TimescaleDB StatefulSet</span>
+                            </li>
+                        </ul>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent class="pt-4">
+                        <ul class="text-sm space-y-2">
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Redis StatefulSet</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Horizontal Pod Autoscaler</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>Ingress (nginx, ALB, etc.)</span>
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <CheckCircle2 class="w-4 h-4 text-green-500" />
+                                <span>ServiceMonitor (Prometheus)</span>
+                            </li>
+                        </ul>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+
+        <div>
+            <h3 id="helm-ingress" class="text-lg font-semibold mb-3 scroll-mt-20">Enable Ingress</h3>
+            <CodeBlock
+                lang="bash"
+                code={`helm install logward logward/logward \\
+  --namespace logward \\
+  --create-namespace \\
+  --set timescaledb.auth.password=<password> \\
+  --set redis.auth.password=<password> \\
+  --set ingress.enabled=true \\
+  --set ingress.className=nginx \\
+  --set ingress.hosts[0].host=logward.example.com \\
+  --set ingress.hosts[0].paths[0].path=/ \\
+  --set ingress.hosts[0].paths[0].pathType=Prefix \\
+  --set ingress.hosts[0].paths[0].service=frontend`}
+            />
+        </div>
+
+        <div>
+            <h3 id="external-database" class="text-lg font-semibold mb-3 scroll-mt-20">Use External Database</h3>
+            <p class="text-sm text-muted-foreground mb-3">
+                For production, you can use an external managed database (AWS RDS, Cloud SQL, etc.):
+            </p>
+            <CodeBlock
+                lang="bash"
+                code={`helm install logward logward/logward \\
+  --namespace logward \\
+  --create-namespace \\
+  --set timescaledb.enabled=false \\
+  --set externalDatabase.host=your-db.region.rds.amazonaws.com \\
+  --set externalDatabase.port=5432 \\
+  --set externalDatabase.database=logward \\
+  --set externalDatabase.username=logward \\
+  --set externalDatabase.password=<password> \\
+  --set redis.auth.password=<password>`}
+            />
+        </div>
+
+        <div>
+            <h3 id="cloud-examples" class="text-lg font-semibold mb-3 scroll-mt-20">Cloud-Specific Examples</h3>
+            <div class="space-y-4">
+                <div>
+                    <p class="text-sm font-medium mb-2">AWS EKS</p>
+                    <CodeBlock
+                        lang="yaml"
+                        code={`# values-eks.yaml
+global:
+  storageClass: gp3
+
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip`}
+                    />
+                </div>
+                <div>
+                    <p class="text-sm font-medium mb-2">GCP GKE</p>
+                    <CodeBlock
+                        lang="yaml"
+                        code={`# values-gke.yaml
+global:
+  storageClass: standard-rwo
+
+ingress:
+  enabled: true
+  className: gce`}
+                    />
+                </div>
+            </div>
+        </div>
+
+        <Card class="border-blue-500/30 bg-blue-500/5">
+            <CardHeader>
+                <div class="flex items-start gap-3">
+                    <Package class="w-5 h-5 text-blue-500 mt-0.5" />
+                    <div>
+                        <CardTitle class="text-base">Helm Chart Resources</CardTitle>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent class="text-sm text-muted-foreground">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="https://artifacthub.io/packages/helm/logward/logward" class="text-primary hover:underline" target="_blank">
+                            Artifact Hub →
+                        </a>
+                        <span class="text-muted-foreground ml-1">Browse chart versions and values</span>
+                    </li>
+                    <li>
+                        <a href="https://github.com/logward-dev/logward-helm-chart" class="text-primary hover:underline" target="_blank">
+                            GitHub Repository →
+                        </a>
+                        <span class="text-muted-foreground ml-1">Source code and issues</span>
+                    </li>
+                </ul>
+            </CardContent>
+        </Card>
+    </div>
+
+    <h2
         id="build-from-source"
         class="text-2xl font-semibold mb-4 scroll-mt-20 border-b border-border pb-2"
     >
@@ -466,7 +681,7 @@ docker compose ps`}
         </Card>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Clone and Build</h3>
+            <h3 id="clone-build" class="text-lg font-semibold mb-3 scroll-mt-20">Clone and Build</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Clone the repository
@@ -513,7 +728,7 @@ docker compose up -d --build`}
 
     <div class="mb-8 space-y-6">
         <div>
-            <h3 class="text-lg font-semibold mb-3">Health Checks</h3>
+            <h3 id="health-checks" class="text-lg font-semibold mb-3 scroll-mt-20">Health Checks</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Check all services status
@@ -531,7 +746,7 @@ docker compose exec postgres psql -U logward -d logward -c "SELECT COUNT(*) FROM
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Common Commands</h3>
+            <h3 id="common-commands" class="text-lg font-semibold mb-3 scroll-mt-20">Common Commands</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Restart a service
@@ -550,7 +765,7 @@ docker compose up -d`}
         </div>
 
         <div>
-            <h3 class="text-lg font-semibold mb-3">Database Backup</h3>
+            <h3 id="database-backup" class="text-lg font-semibold mb-3 scroll-mt-20">Database Backup</h3>
             <CodeBlock
                 lang="bash"
                 code={`# Create backup

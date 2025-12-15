@@ -10,7 +10,6 @@
 
     let headings: TocItem[] = [];
     let activeId = "";
-    let observer: IntersectionObserver | null = null;
 
     // Re-extract headings when page changes (browser only)
     $: if (typeof window !== "undefined" && $page.url.pathname) {
@@ -22,11 +21,6 @@
         // Only run in browser
         if (typeof window === "undefined") return;
 
-        // Clean up previous observer
-        if (observer) {
-            observer.disconnect();
-        }
-
         // Extract h2 and h3 headings from the content
         const contentArea = document.querySelector(".docs-content");
         if (!contentArea) {
@@ -35,34 +29,52 @@
         }
 
         const headingElements = contentArea.querySelectorAll("h2, h3");
-        headings = Array.from(headingElements).map((el) => ({
-            id: el.id,
-            text: el.textContent || "",
-            level: parseInt(el.tagName.substring(1)),
-        }));
+        headings = Array.from(headingElements)
+            .filter((el) => el.id && el.id.length > 0) // Only headings with IDs
+            .map((el) => ({
+                id: el.id,
+                text: el.textContent || "",
+                level: parseInt(el.tagName.substring(1)),
+            }));
 
-        // Setup intersection observer for active heading
-        observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        activeId = entry.target.id;
-                    }
-                });
-            },
-            { rootMargin: "-100px 0px -66%" },
-        );
+        // Set initial active heading
+        updateActiveHeading();
+    }
 
-        headingElements.forEach((el) => observer!.observe(el));
+    function updateActiveHeading() {
+        if (headings.length === 0) return;
+
+        const scrollTop = window.scrollY;
+        const offset = 120; // Account for fixed header
+
+        // Find the heading that's currently at or above the scroll position
+        let currentId = headings[0]?.id || "";
+
+        for (const heading of headings) {
+            const element = document.getElementById(heading.id);
+            if (element) {
+                const top = element.getBoundingClientRect().top + scrollTop;
+                if (top <= scrollTop + offset) {
+                    currentId = heading.id;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        if (currentId !== activeId) {
+            activeId = currentId;
+        }
     }
 
     onMount(() => {
         extractHeadings();
 
+        // Use scroll event for tracking
+        window.addEventListener("scroll", updateActiveHeading, { passive: true });
+
         return () => {
-            if (observer) {
-                observer.disconnect();
-            }
+            window.removeEventListener("scroll", updateActiveHeading);
         };
     });
 

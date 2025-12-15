@@ -8,6 +8,7 @@
         ChevronRight,
         ChevronDown,
         Github,
+        ArrowRightLeft,
     } from "lucide-svelte";
 
     interface NavItem {
@@ -70,6 +71,19 @@
             ],
         },
         {
+            title: "Migration",
+            icon: ArrowRightLeft,
+            collapsed: false,
+            items: [
+                { title: "Overview", href: "/docs/migration" },
+                { title: "From Datadog", href: "/docs/migration/datadog" },
+                { title: "From Splunk", href: "/docs/migration/splunk" },
+                { title: "From ELK Stack", href: "/docs/migration/elk" },
+                { title: "From SigNoz", href: "/docs/migration/signoz" },
+                { title: "From Grafana Loki", href: "/docs/migration/loki" },
+            ],
+        },
+        {
             title: "Guides",
             icon: Book,
             collapsed: false,
@@ -81,7 +95,7 @@
         },
     ];
 
-    function isActive(href: string, currentPath: string): boolean {
+    function isActive(href: string, currentPath: string, currentHash: string): boolean {
         // Special case for home/overview pages
         if (href === "/docs") {
             return currentPath === "/docs";
@@ -90,11 +104,13 @@
         // Check if it's a hash link (e.g., /docs/api#authentication)
         if (href.includes("#")) {
             const [path, hash] = href.split("#");
-            return currentPath === path;
+            // Only active if both path and hash match
+            return currentPath === path && currentHash === `#${hash}`;
         }
 
-        // Exact match for other pages
-        return currentPath === href;
+        // For non-hash links, active only if path matches AND no hash in URL
+        // (or it's an exact match for overview pages)
+        return currentPath === href && !currentHash;
     }
 
     function toggleSection(index: number) {
@@ -134,6 +150,7 @@
                                         class="nav-link {isActive(
                                             item.href,
                                             $page.url.pathname,
+                                            $page.url.hash,
                                         )
                                             ? 'active'
                                             : ''}"
