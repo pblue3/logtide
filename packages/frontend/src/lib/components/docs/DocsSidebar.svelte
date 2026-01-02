@@ -9,7 +9,14 @@
         ChevronDown,
         Github,
         ArrowRightLeft,
+        KeyRound,
     } from "lucide-svelte";
+
+    interface Props {
+        mobile?: boolean;
+    }
+
+    let { mobile = false }: Props = $props();
 
     interface NavItem {
         title: string;
@@ -71,6 +78,22 @@
             ],
         },
         {
+            title: "Authentication",
+            icon: KeyRound,
+            collapsed: false,
+            items: [
+                { title: "Overview", href: "/docs/authentication" },
+                { title: "OpenID Connect", href: "/docs/authentication#oidc" },
+                { title: "LDAP", href: "/docs/authentication#ldap" },
+                { title: "Initial Admin Setup", href: "/docs/authentication#initial-admin" },
+                { title: "Auth-Free Mode", href: "/docs/authentication#auth-free-mode" },
+                { title: "Admin Settings", href: "/docs/authentication#admin-settings" },
+                { title: "User Management", href: "/docs/authentication#user-management" },
+                { title: "Troubleshooting", href: "/docs/authentication#troubleshooting" },
+                { title: "Dev Testing", href: "/docs/authentication#dev-testing" },
+            ],
+        },
+        {
             title: "Migration",
             icon: ArrowRightLeft,
             collapsed: false,
@@ -118,7 +141,7 @@
     }
 </script>
 
-<nav class="docs-sidebar">
+<nav class="docs-sidebar" class:mobile>
     <div class="sidebar-content">
         <a href="/docs" class="sidebar-header">
             <FileText class="w-5 h-5 text-primary" />
@@ -343,6 +366,14 @@
     @media (max-width: 1024px) {
         .docs-sidebar {
             display: none;
+        }
+
+        .docs-sidebar.mobile {
+            display: block;
+            width: 100%;
+            height: auto;
+            position: static;
+            border-right: none;
         }
     }
 </style>
